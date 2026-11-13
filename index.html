@@ -626,15 +626,14 @@ const codes=()=>{try{return JSON.parse(store.get("sf_codes")||"{}")}catch(e){ret
 function home(){
  const st=[["Endereço coletor",DATA.start.coletor],["Vítima V1",DATA.start.v1],["Vítima V2",DATA.start.v2],["Vítima V3",DATA.start.v3]];
  const tools=[["#/token/eth","token","Contrato do USDT","Ethereum e Tron: funções, eventos e lista de bloqueio."],["#/ponte","bridge","Ponte Atlas","Consulta de operações de bridge pelo hash."],["#/nexo","swap","NexoFloat","Consulta de swap e elaboração do ofício."],["#/cofre","vault","Cofre de documentos","Respostas e autos liberados ao longo dos atos."],["#/lab","flask","Laboratório","Recuperação de carteiras a partir da frase de recuperação."],["#/aurumx","store","Vitrine AurumX","O site que as vítimas viram, como era no ar."]];
- const pdfs=[["Roteiro_00_Abertura.pdf","Abertura"],["Roteiro_Ato1_Deteccao.pdf","Ato 1"],["Roteiro_Ato2_Rastreio.pdf","Ato 2"],["Roteiro_Ato3_Sigilo.pdf","Ato 3"],["Roteiro_Ato4_Bridge_Swap.pdf","Ato 4"],["Roteiro_Ato5_Congelamento.pdf","Ato 5"],["Roteiro_Ato6_Busca.pdf","Ato 6"],["Roteiro_Ato7_Custodia.pdf","Ato 7"],["Roteiro_Completo.pdf","Completo"]];
  return `<div class="hero"><div class="eyebrow">Explorador</div><h1>Consulte endereços e transações do caso</h1><p class="sub">Operação Saldo Fantasma, nas redes Tron e Ethereum. Busque por endereço ou pelo hash da transação.</p></div>
 <form class="search" id="sf">${IC.search}<input type="text" id="q" placeholder="Endereço ou hash da transação" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="sbtn"><span>Buscar</span>${IC.go}</button></form><div id="msg" class="small" style="margin-top:8px"></div>
 <section class="blk"><h2>Pontos de partida dos autos</h2><p class="cap">Vêm dos boletins de ocorrência: o endereço de depósito (coletor) e os endereços das vítimas.</p>
 <div class="grid4">${st.map(([n,a])=>`<div class="card start"><div class="top"><span class="tag"><i></i>Tron</span><button class="cp" data-copy="${esc(a)}">${IC.copy}<span class="t">Copiar</span></button></div><a href="#/addr/${encodeURIComponent(a)}"><b>${n}</b><span class="addr">${esc(short(a))}</span></a></div>`).join("")}</div></section>
 <section class="blk"><h2>Ferramentas</h2><p class="cap">O que a delegacia tem à mão durante a investigação.</p>
 <div class="grid3">${tools.map(([h,i,n,d])=>`<a class="card tool" href="${h}"><div class="ic">${IC[i]}</div><div><b>${n}</b><span class="d">${d}</span></div></a>`).join("")}</div></section>
-<section class="blk"><div class="card dl"><div class="t"><b>Roteiro do aluno</b><span>Um PDF por ato. A abertura é livre; cada ato abre com a senha mostrada no slide, e o completo é liberado no encerramento.</span></div>
-<div class="chips2">${pdfs.map(([f,n])=>`<a class="chip2" href="${f}" download>${IC.dl}${n}</a>`).join("")}</div></div></section>`}
+<section class="blk"><div class="card dl"><div class="t"><b>Roteiro do aluno</b><span>Um único PDF com todos os atos. Abre com a senha informada pelo professor.</span></div>
+<div class="chips2"><a class="chip2" href="Roteiro_Completo.pdf" download>${IC.dl}Baixar roteiro completo (PDF)</a></div></div></section>`}
 function addrPage(a0){const a=findAddr(a0),n=net(a),list=txsOf(a),ci=x=>x.toLowerCase()===a.toLowerCase();
  let usdt=0,nat=0;const natSym=n==="eth"?"ETH":"TRX";
  for(const t of list){const s=ci(t.para)?1:-1;if(t.ativo==="USDT")usdt+=s*t.valor;else nat+=s*t.valor}
@@ -791,15 +790,13 @@ const attrTag=a=>{const t=rtAttr(a);return t?`<span class="chip" style="backgrou
 const RT={lbl:(()=>{try{return localStorage.getItem("sf_lbl")||"compact"}catch(e){return "compact"}})(),zoom:null,eff:1,sel:null,drag:null,hist:[],hl:null,tab:"transf",asc:false,fdir:"",fat:"",chk:new Set(),undo:[],redo:[]};
 const rtGet=()=>{try{const g=JSON.parse(store.get("sf_graph")||"null");return g&&Array.isArray(g.tx)?{tx:g.tx,pos:g.pos||{},names:g.names||{},colors:g.colors||{},notes:g.notes||{},npos:g.npos||{}}:{tx:[],pos:{},names:{},colors:{},notes:{},npos:{}}}catch(e){return{tx:[],pos:{},names:{}}}};
 const rtSet=g=>store.set("sf_graph",JSON.stringify(g));
-const rtOpen=t=>{const d=RT_TX[t.k];return !!d&&!!codes()[d]};
+const RT_PLUS=["o1","o2"];const rtCan=k=>!!RT_TX[k]||RT_PLUS.includes(k);const rtOpen=t=>rtCan(t.k);
 const rtOn=k=>rtGet().tx.includes(k);
 function plotBtn(t){
- if(!RT_TX[t.k])return "";
- if(!rtOn(t.k)&&!rtOpen(t)){const dd=DATA.docs.find(x=>x.id===RT_TX[t.k]);return `<br><span class="small">🔒 Gráfico: disponível após liberar no Cofre o documento “${esc(dd?dd.titulo:"do ato")}”</span>`}
+ if(!rtCan(t.k))return "";
  return `<br><button class="sec copy" data-plot="${t.k}">${rtOn(t.k)?"✓ No gráfico (remover)":"+ Gráfico"}</button>`}
 function plotIcon(t){
- if(!RT_TX[t.k])return '<span class="lk none"></span>';
- if(!rtOn(t.k)&&!rtOpen(t)){const dd=DATA.docs.find(x=>x.id===RT_TX[t.k]);return `<span class="lk" tabindex="0" data-tip="Gráfico disponível após liberar no Cofre: ${esc(dd?dd.titulo:"documento do ato")}" aria-label="Gráfico bloqueado">${IC.lock}</span>`}
+ if(!rtCan(t.k))return '<span class="lk none"></span>';
  const on=rtOn(t.k);return `<button class="lk${on?" on":""}" data-plot="${t.k}" data-ic="1" title="${on?"No gráfico (clique para remover)":"Adicionar ao gráfico"}" aria-label="Alternar no gráfico">${IC.graph}</button>`}
 function rtSnap(){RT.undo.push(JSON.stringify(rtGet()));if(RT.undo.length>60)RT.undo.shift();RT.redo=[]}
 function rtToggle(k){rtSnap();const g=rtGet(),i=g.tx.indexOf(k);if(i>=0)g.tx.splice(i,1);else g.tx.push(k);rtSet(g);return i<0}
@@ -928,15 +925,15 @@ function rtSide(m){
   const f=o=>Object.entries(o).map(([s,v])=>fmt(v,s==="ETH"?4:2)+" "+s).join(" · ")||"—";
   body=`<div class="rx-tw"><table class="rx-t"><thead><tr><th>Contraparte</th><th>Nome</th><th class="r">Transf.</th><th class="r">Recebido</th><th class="r">Enviado</th></tr></thead><tbody>${[...mp.values()].sort((x,y)=>y.n-x.n).map(x=>`<tr><td><span class="rx-dot" style="background:${rtColor(x.o)}"></span><button class="rs-go addr" data-rtgo="${esc(x.o)}" title="${esc(x.o)}">${esc(short(x.o))}</button></td><td>${esc(rtLabel(x.o,G))}</td><td class="r">${x.n}</td><td class="r in">${f(x.r)}</td><td class="r out">${f(x.e)}</td></tr>`).join("")||'<tr><td colspan="5" class="small">Nenhuma contraparte.</td></tr>'}</tbody></table></div>`}
  else if(RT.tab==="transf"){
-  const rows=rtRows(a),plottable=rows.filter(x=>RT_TX[x.t.k]&&(rtOn(x.t.k)||rtOpen(x.t))),nchk=[...RT.chk].filter(k=>rows.some(x=>x.t.k===k)).length;
-  const bar=`<div class="rx-ban">${RX.info}<span>Marque as transferências com o ícone de grafo (ou pelas caixas de seleção e “Plotar selecionadas”) para colocá-las no gráfico. Cadeado: falta liberar no Cofre o documento que sustenta a transação.</span></div>
+  const rows=rtRows(a),plottable=rows.filter(x=>rtCan(x.t.k)),nchk=[...RT.chk].filter(k=>rows.some(x=>x.t.k===k)).length;
+  const bar=`<div class="rx-ban">${RX.info}<span>Marque as transferências com o ícone de grafo (ou pelas caixas de seleção e “Plotar selecionadas”) para colocá-las no gráfico.</span></div>
   <div class="rx-flt"><label class="rx-sel">Direção<select id="fdir"><option value="">Todas</option><option value="in"${RT.fdir==="in"?" selected":""}>Recebido</option><option value="out"${RT.fdir==="out"?" selected":""}>Enviado</option></select></label>
   <label class="rx-sel">Ativo<select id="fat"><option value="">Todos</option>${["USDT",nat].map(s=>`<option${RT.fat===s?" selected":""}>${s}</option>`).join("")}</select></label>
   ${nchk?`<span class="rx-bulk"><b>${nchk}</b> selecionada${nchk>1?"s":""}<button id="rbulk">Plotar selecionadas</button><button class="sec" id="rbclr">Limpar</button></span>`:""}
   <span class="rx-fr"><button class="rx-ib" id="frs" title="Limpar filtros" aria-label="Limpar filtros">${RX.refresh}</button><button class="rx-ib" id="fcsv" title="Baixar CSV" aria-label="Baixar CSV">${RX.dl}</button></span></div>`;
   const tzl=tz()==="gmt3"?"GMT-3":"UTC";
   body=bar+`<div class="rx-tw"><table class="rx-t"><thead><tr><th class="c"><input type="checkbox" id="rchkall" aria-label="Selecionar todas" ${plottable.length&&plottable.every(x=>RT.chk.has(x.t.k))?"checked":""}></th><th><button class="rx-sort" id="rsort">Data (${tzl}) <span>${RT.asc?"↑":"↓"}</span></button></th><th>Interpretação</th><th>Ativo</th><th class="r">Valor</th><th class="r">Valor USD</th><th>Direção</th><th>Contraparte</th><th>Hash</th><th class="c">Ações</th></tr></thead><tbody>
-  ${rows.map(({t,inn,o})=>{const [it,ic]=rtInterp(t,o),oat=rtAttr(o),k=inn?"in":"out",on=rtOn(t.k),can=RT_TX[t.k]&&(on||rtOpen(t));
+  ${rows.map(({t,inn,o})=>{const [it,ic]=rtInterp(t,o),oat=rtAttr(o),k=inn?"in":"out",on=rtOn(t.k),can=rtCan(t.k)&&(on||rtOpen(t));
   return `<tr class="${on?"on":""}${RT.hl===t.hash?" hl":""}"><td class="c">${can?`<input type="checkbox" class="rchk" data-k="${t.k}" ${RT.chk.has(t.k)?"checked":""} aria-label="Selecionar transação">`:`<input type="checkbox" disabled aria-label="Indisponível">`}</td>
   <td class="nw">${tm(t.utc,false)}</td><td><span class="rx-pill ${ic}">${it}</span></td><td><span class="rx-as ${t.ativo}">${t.ativo==="USDT"?'<i class="d"></i>':'<i></i>'}${t.ativo}</span></td>
   <td class="r ${k}">${inn?"":"−"}${fmt(t.valor,t.ativo==="ETH"?4:2)}</td><td class="r ${k}">${inn?"":"−"}$ ${fmt(rtUsd(t),2)}</td>
@@ -948,7 +945,7 @@ function rtSide(m){
  return head+`<div class="rx-pb">${body}</div>`}
 const rxW=()=>{const vw=document.documentElement.clientWidth,d=Math.min(880,Math.max(560,vw*.44));let w=RT.rxw;if(!w){try{w=+localStorage.getItem("sf_rxw")}catch(e){}}return Math.round(Math.max(380,Math.min(vw-420,w||d)))};
 function rtPage(){
- const m=rtModel(),n=m.txs.length,tot=Object.keys(RT_TX).length;
+ const m=rtModel(),n=m.txs.length,tot=Object.keys(RT_TX).length+RT_PLUS.length;
  const s=rtSvg(m,false),vw=document.documentElement.clientWidth,wide=vw>=1060;
  RT.eff=RT.zoom||Math.min(1,Math.max(0.55,(wide?vw-rxW()-69:vw-40)/s.w));
  const tb=(id,ic,t)=>`<button class="rx-tb" id="${id}" title="${t}" aria-label="${t}">${ic}</button>`;
@@ -956,7 +953,7 @@ function rtPage(){
  <div class="rx-body" style="--rxw:${rxW()}px"><section class="rx-left"><div class="rx-bar"><div class="rx-case" title="Caso didático (dados fictícios)">Operação Saldo Fantasma <span>${RX.chev}</span></div><span class="rx-sp"></span><span class="rx-lbl" role="group" aria-label="Rótulos das setas"><span>Rótulos</span><button id="rtlc" class="${RT.lbl!=="full"?"on":""}">Compacto</button><button id="rtlf" class="${RT.lbl==="full"?"on":""}">Completo</button></span><span class="rx-zl">${Math.round(RT.eff*100)}%</span>
  ${tb("rtre",RX.lay,"Reorganizar o gráfico")}${tb("rtz+",RX.zin,"Ampliar")}${tb("rtz-",RX.zout,"Reduzir")}${tb("rtfit",RX.fit,"Ajustar à tela")}<i class="rx-vr"></i>${tb("rtun",RX.undo,"Desfazer")}${tb("rtrd",RX.redo,"Refazer")}<i class="rx-vr"></i>${tb("rtpng",RX.img,"Baixar PNG")}${tb("rtsvg",RX.code,"Baixar SVG")}${tb("rtclr",RX.trash,"Limpar o gráfico")}</div>
  <div class="rx-cv"><form class="rx-search" id="rxs">${RX.sear}<input type="text" id="rxq" placeholder="Buscar endereço, hash ou nome" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Buscar no gráfico"></form><div id="rxm" class="rx-msg"></div>
- ${n?`<div class="rt-canvas" id="rtc"><div id="rtsv" style="width:${Math.round(s.w*RT.eff)}px;transform:translate(${RT.px||0}px,${RT.py||0}px)">${s.svg.replace(/width="\d+" height="\d+"/,'width="100%"')}</div></div>`:`<div class="rx-blank"><b>Gráfico vazio</b><p>Busque um endereço (por exemplo, o coletor dos boletins) e marque as transferências no painel. Algumas só ficam disponíveis depois de liberar documentos no Cofre.</p></div>`}</div>
+ ${n?`<div class="rt-canvas" id="rtc"><div id="rtsv" style="width:${Math.round(s.w*RT.eff)}px;transform:translate(${RT.px||0}px,${RT.py||0}px)">${s.svg.replace(/width="\d+" height="\d+"/,'width="100%"')}</div></div>`:`<div class="rx-blank"><b>Gráfico vazio</b><p>Busque um endereço (por exemplo, o coletor dos boletins) e marque as transferências no painel. O lado Ethereum aparece quando você buscar os endereços informados pela Ponte Atlas e pela NexoFloat.</p></div>`}</div>
  <div class="rx-foot">${n} de ${tot} transações do caso no gráfico · arraste os blocos para reorganizar · dados fictícios</div></section><div class="rx-split" id="rxsplit" role="separator" aria-orientation="vertical" aria-label="Arraste para ajustar a largura do painel de transações" title="Arraste para ajustar a largura do painel · duplo clique: largura padrão" tabindex="0"></div>
  <aside class="rx-side" id="rtside">${rtSide(m)}</aside></div>
 <div class="grid two rx-more"><div class="card"><h2>Consulta de atribuição</h2><form class="search" id="rtaf"><input type="text" id="rtaq" placeholder="Endereço Tron ou Ethereum" autocomplete="off" autocapitalize="off" spellcheck="false"><button>Consultar</button></form><div id="rtar" class="small" style="margin-top:8px"></div></div>
@@ -1038,7 +1035,7 @@ function rtBind(){
  if(g("frs"))g("frs").onclick=()=>{RT.fdir="";RT.fat="";RT.hl=null;redo()};
  if(g("rsort"))g("rsort").onclick=()=>{RT.asc=!RT.asc;redo()};
  document.querySelectorAll(".rchk").forEach(c=>c.onchange=()=>{c.checked?RT.chk.add(c.dataset.k):RT.chk.delete(c.dataset.k);RT.keep=true;redo()});
- if(g("rchkall"))g("rchkall").onchange=e=>{const a=findAddr(RT.sel),rows=rtRows(a).filter(x=>RT_TX[x.t.k]&&(rtOn(x.t.k)||rtOpen(x.t)));rows.forEach(x=>e.target.checked?RT.chk.add(x.t.k):RT.chk.delete(x.t.k));RT.keep=true;redo()};
+ if(g("rchkall"))g("rchkall").onchange=e=>{const a=findAddr(RT.sel),rows=rtRows(a).filter(x=>rtCan(x.t.k));rows.forEach(x=>e.target.checked?RT.chk.add(x.t.k):RT.chk.delete(x.t.k));RT.keep=true;redo()};
  if(g("rbclr"))g("rbclr").onclick=()=>keep(()=>RT.chk.clear());
  if(g("rbulk"))g("rbulk").onclick=()=>keep(()=>{rtSnap();const G=rtGet();for(const k of RT.chk){const t=DATA.txs.find(x=>x.k===k);if(t&&(rtOpen(t)||G.tx.includes(k))&&!G.tx.includes(k))G.tx.push(k)}rtSet(G);RT.chk.clear()});
  if(g("fcsv"))g("fcsv").onclick=()=>{const a=findAddr(RT.sel),rows=rtRows(a),q=s=>'"'+String(s).replace(/"/g,'""')+'"';
